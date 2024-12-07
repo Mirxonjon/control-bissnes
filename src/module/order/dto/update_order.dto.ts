@@ -40,16 +40,16 @@ export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   @IsOptional()
   service_car?: UpdateServiceCarDto[];
 
-  @ApiProperty({
-    type: () => [UpdateDebtDto],
-    description: 'Yangilanadigan qarzlar',
-    // required: false,
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateDebtDto)
-  @IsOptional()
-  debts?: UpdateDebtDto[];
+  // @ApiProperty({
+  //   type: () => [UpdateDebtDto],
+  //   description: 'Yangilanadigan qarzlar',
+  //   // required: false,
+  // })
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => UpdateDebtDto)
+  // @IsOptional()
+  // debts?: UpdateDebtDto[];
 }
 
 export class UpdateOrderStatusDto {

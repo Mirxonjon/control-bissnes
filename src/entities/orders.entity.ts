@@ -64,6 +64,6 @@ export class OrdersEntity extends BaseEntity {
   })
   debt: DebtsEntity[];
 
-  @OneToMany(() => CarServiceEntity, (carService) => carService.user_id)
+  @OneToMany(() => CarServiceEntity, (carService) => carService.order_id)
   carServices: CarServiceEntity[];
 }

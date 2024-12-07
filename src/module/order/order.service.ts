@@ -22,16 +22,16 @@ export class OrderServise {
   private logger = new Logger(OrderServise.name);
 
   async findAll() {
-    const methodName = this.findAll;
+    const methodName = this.findAll.name;
 
     try {
-      const allDebts = await OrdersEntity.find({
-
+      const allOrders = await OrdersEntity.find({
         relations: {
-          user_id:true,
+          user_id: true,
           carServices: true,
-          orderProducts: true,
-
+          orderProducts: {
+            product_id: true,
+          },
         },
         order: {
           create_data: 'desc',
@@ -39,8 +39,22 @@ export class OrderServise {
       }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
+      // const allCarservice = await CarServiceEntity.find({
+      //   where: {
+      //     order_id: {
+      //       // id : 
+      //     }
+      //   },
+      //   relations: {
+      //     user_id: true,
+      //     order_id: true,
+      //   },
+      //   order: {
+      //     create_data: 'desc',
+      //   },
+      // })
 
-      return allDebts;
+      return allOrders;
     } catch (error) {
       this.logger.debug(`Method: ${methodName} - Error: `, error);
       throw new HttpException(
@@ -57,7 +71,10 @@ export class OrderServise {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
       if (!findOrder) {
-        this.logger.debug(`Method: ${methodName} - Order Not Found: `, findOrder);
+        this.logger.debug(
+          `Method: ${methodName} - Order Not Found: `,
+          findOrder,
+        );
         throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
       }
       return findOrder;
@@ -71,7 +88,7 @@ export class OrderServise {
   }
 
   async create(body: CreateOrderDto) {
-    const methodName = this.create;
+    const methodName = this.create.name;
     try {
       console.log(body);
 
@@ -128,10 +145,12 @@ export class OrderServise {
             `Method: ${methodName} - Product not found: `,
             findProduct,
           );
+          await OrdersEntity.delete({ id: createOrder.raw[0].id });
           throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
         }
         if (findProduct.type == TypeProductEnum.COUNT) {
           if (+product.quantity_sold > +findProduct.current_quantity) {
+            await OrdersEntity.delete({ id: createOrder.raw[0].id });
             throw new HttpException(
               'quantity sold is more than quantity product',
               HttpStatus.BAD_REQUEST,
@@ -156,6 +175,9 @@ export class OrderServise {
               `Method: ${methodName} - Product Update Error Count: `,
               updateProductResult,
             );
+            await OrdersEntity.delete({
+              id: createOrder.raw[0].id,
+            });
             throw new HttpException(
               'Product Update Error Count',
               HttpStatus.NOT_FOUND,
@@ -164,6 +186,7 @@ export class OrderServise {
         }
         if (findProduct.type == TypeProductEnum.METR) {
           if (+product.measurement_sold > +findProduct.current_measurement) {
+            await OrdersEntity.delete({ id: createOrder.raw[0].id });
             throw new HttpException(
               'measurement sold is more than measurement product',
               HttpStatus.BAD_REQUEST,
@@ -189,6 +212,9 @@ export class OrderServise {
               `Method: ${methodName} - Product Update Error Metr: `,
               updateProductResult,
             );
+            await OrdersEntity.delete({
+              id: createOrder.raw[0].id,
+            });
             throw new HttpException(
               'Product Update Error Metr',
               HttpStatus.NOT_FOUND,
@@ -204,7 +230,7 @@ export class OrderServise {
               measurement_sold: product.measurement_sold,
               quantity_sold: product.quantity_sold,
               price_per_day: product.price_per_day,
-              IsActive : OrderProductTypeEnum.ACTIVE,
+              IsActive: OrderProductTypeEnum.ACTIVE,
               unused_days: product.unused_days,
               given_date: product.given_date,
               end_date: product.end_date,
@@ -222,6 +248,9 @@ export class OrderServise {
             `Method: ${methodName} - Erorr Insert Order Product : `,
             createOrderProdut,
           );
+          await OrdersEntity.delete({
+            id: createOrder.raw[0].id,
+          });
           throw new HttpException(
             'insert Erorr in order Product',
             HttpStatus.BAD_REQUEST,
@@ -230,8 +259,8 @@ export class OrderServise {
       }
 
       for (const service_car of body?.service_car) {
-        console.log(service_car ,'Service Car' , createOrder.raw[0].id);
-        
+        console.log(service_car, 'Service Car', createOrder.raw[0].id);
+
         const createServiceCar: InsertResult =
           await CarServiceEntity.createQueryBuilder()
             .insert()
@@ -274,6 +303,7 @@ export class OrderServise {
   }
   async update(id: string, body: UpdateOrderDto) {
     const methodName = this.update;
+// console.log(body);
 
     try {
       const findOrder = await OrdersEntity.findOne({
@@ -414,7 +444,7 @@ export class OrderServise {
                 measurement_sold: product.measurement_sold,
                 quantity_sold: product.quantity_sold,
                 price_per_day: product.price_per_day,
-                IsActive : OrderProductTypeEnum.ACTIVE,
+                IsActive: OrderProductTypeEnum.ACTIVE,
                 unused_days: product.unused_days,
                 given_date: product.given_date,
                 end_date: product.end_date,
@@ -468,7 +498,7 @@ export class OrderServise {
             throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
           }
 
-          if(product.status == 'active'){
+          if (product.status == 'active') {
             if (findProduct.type == TypeProductEnum.COUNT) {
               let currentQuantity =
                 +findProduct.current_quantity + +findOrderProduct.quantity_sold;
@@ -491,7 +521,7 @@ export class OrderServise {
                   .catch((e) => {
                     throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
                   });
-  
+
               if (!updateProductResult.affected) {
                 this.logger.debug(
                   `Method: ${methodName} - Product Update Error Count: `,
@@ -513,7 +543,7 @@ export class OrderServise {
                   HttpStatus.BAD_REQUEST,
                 );
               }
-  
+
               const updateProductResult: UpdateResult =
                 await ProductsEntity.createQueryBuilder()
                   .update()
@@ -527,7 +557,7 @@ export class OrderServise {
                   .catch((e) => {
                     throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
                   });
-  
+
               if (!updateProductResult.affected) {
                 this.logger.debug(
                   `Method: ${methodName} - Product Update Error Metr: `,
@@ -539,20 +569,24 @@ export class OrderServise {
                 );
               }
             }
-  
+
             const updateOrderProduct: UpdateResult =
               await OrderProductsEntity.createQueryBuilder()
                 .update()
                 .set({
                   measurement_sold:
-                    product.measurement_sold || findOrderProduct.measurement_sold,
+                    product.measurement_sold ||
+                    findOrderProduct.measurement_sold,
                   quantity_sold:
                     product.quantity_sold || findOrderProduct.quantity_sold,
                   price_per_day:
                     product.price_per_day || findOrderProduct.price_per_day,
                   unused_days:
                     product.unused_days || findOrderProduct.unused_days,
-                  IsActive : product.status == 'active' ? OrderProductTypeEnum.ACTIVE : OrderProductTypeEnum.INACTIVE,
+                  IsActive:
+                    product.status == 'active'
+                      ? OrderProductTypeEnum.ACTIVE
+                      : OrderProductTypeEnum.INACTIVE,
                   given_date: product.given_date || findOrderProduct.given_date,
                   end_date: product.end_date || findOrderProduct.end_date,
                   product_id: findProduct,
@@ -562,7 +596,7 @@ export class OrderServise {
                 .catch((e) => {
                   throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
                 });
-  
+
             if (!updateOrderProduct.affected) {
               this.logger.debug(
                 `Method: ${methodName} - Erorr Update Order Product : `,
@@ -573,7 +607,7 @@ export class OrderServise {
                 HttpStatus.BAD_REQUEST,
               );
             }
-          }else {
+          } else {
             const findOrderProduct = await OrderProductsEntity.findOne({
               where: { id: product.order_product_id },
             });
@@ -587,7 +621,7 @@ export class OrderServise {
                 HttpStatus.NOT_FOUND,
               );
             }
-  
+
             const findProduct = await ProductsEntity.findOne({
               where: {
                 id: product.product_id,
@@ -595,18 +629,21 @@ export class OrderServise {
             }).catch(() => {
               throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
             });
-  
+
             if (!findProduct) {
               this.logger.debug(
                 `Method: ${methodName} - Product not found: `,
                 findProduct,
               );
-              throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+              throw new HttpException(
+                'Product not found',
+                HttpStatus.NOT_FOUND,
+              );
             }
             if (findProduct.type == TypeProductEnum.COUNT) {
               let currentQuantity =
                 +findProduct.current_quantity + +findOrderProduct.quantity_sold;
-  
+
               const updateProductResult: UpdateResult =
                 await ProductsEntity.createQueryBuilder()
                   .update()
@@ -618,7 +655,7 @@ export class OrderServise {
                   .catch((e) => {
                     throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
                   });
-  
+
               if (!updateProductResult.affected) {
                 this.logger.debug(
                   `Method: ${methodName} - Product Update Error Count: `,
@@ -634,7 +671,7 @@ export class OrderServise {
               let currentMeasurement =
                 +findProduct.current_measurement +
                 +findOrderProduct.measurement_sold;
-  
+
               const updateProductResult: UpdateResult =
                 await ProductsEntity.createQueryBuilder()
                   .update()
@@ -646,7 +683,7 @@ export class OrderServise {
                   .catch((e) => {
                     throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
                   });
-  
+
               if (!updateProductResult.affected) {
                 this.logger.debug(
                   `Method: ${methodName} - Product Update Error Metr: `,
@@ -658,43 +695,45 @@ export class OrderServise {
                 );
               }
             }
-  
+
             const updateOrderProduct: DeleteResult =
-            await OrderProductsEntity.createQueryBuilder()
-            .update()
-            .set({
-              measurement_sold:
-                product.measurement_sold || findOrderProduct.measurement_sold,
-              quantity_sold:
-                product.quantity_sold || findOrderProduct.quantity_sold,
-              price_per_day:
-                product.price_per_day || findOrderProduct.price_per_day,
-              unused_days:
-                product.unused_days || findOrderProduct.unused_days,
-              IsActive : product.status == 'active' ? OrderProductTypeEnum.ACTIVE : OrderProductTypeEnum.INACTIVE,
-              given_date: product.given_date || findOrderProduct.given_date,
-              end_date: product.end_date || findOrderProduct.end_date,
-              product_id: findProduct,
-            })
-            .where('id = :id', { id: findOrderProduct.id })
-            .execute()
-            .catch((e) => {
-              throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-            });
+              await OrderProductsEntity.createQueryBuilder()
+                .update()
+                .set({
+                  measurement_sold:
+                    product.measurement_sold ||
+                    findOrderProduct.measurement_sold,
+                  quantity_sold:
+                    product.quantity_sold || findOrderProduct.quantity_sold,
+                  price_per_day:
+                    product.price_per_day || findOrderProduct.price_per_day,
+                  unused_days:
+                    product.unused_days || findOrderProduct.unused_days,
+                  IsActive:
+                    product.status == 'active'
+                      ? OrderProductTypeEnum.ACTIVE
+                      : OrderProductTypeEnum.INACTIVE,
+                  given_date: product.given_date || findOrderProduct.given_date,
+                  end_date: product.end_date || findOrderProduct.end_date,
+                  product_id: findProduct,
+                })
+                .where('id = :id', { id: findOrderProduct.id })
+                .execute()
+                .catch((e) => {
+                  throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
+                });
 
-        if (!updateOrderProduct.affected) {
-          this.logger.debug(
-            `Method: ${methodName} - Erorr Update Order Product : `,
-            updateOrderProduct,
-          );
-          throw new HttpException(
-            'Update Erorr in order Product',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-          
+            if (!updateOrderProduct.affected) {
+              this.logger.debug(
+                `Method: ${methodName} - Erorr Update Order Product : `,
+                updateOrderProduct,
+              );
+              throw new HttpException(
+                'Update Erorr in order Product',
+                HttpStatus.BAD_REQUEST,
+              );
+            }
           }
-
         } else if (product.action == ActionTypesEnum.DELETE) {
           const findOrderProduct = await OrderProductsEntity.findOne({
             where: { id: product.order_product_id },
@@ -919,6 +958,8 @@ export class OrderServise {
 
   async updateStatus(id: string, body: UpdateOrderStatusDto) {
     const methodName = this.update;
+    console.log(body);
+    
 
     try {
       const findOrder = await OrdersEntity.findOne({
