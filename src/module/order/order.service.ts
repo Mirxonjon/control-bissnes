@@ -67,7 +67,19 @@ export class OrderServise {
   async findOne(id: string) {
     const methodName = this.findOne;
     try {
-      const findOrder = await OrdersEntity.findOneBy({ id }).catch((e) => {
+      const findOrder = await OrdersEntity.findOne({
+        where: {
+        id
+        },
+        relations: {
+          user_id: true,
+          carServices: true,
+          orderProducts: {
+            product_id: true,
+          },
+        },
+      
+      }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
       if (!findOrder) {
