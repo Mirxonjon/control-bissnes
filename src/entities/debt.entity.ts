@@ -24,7 +24,7 @@ export class DebtsEntity extends BaseEntity {
   @Column({
     type: 'character varying',
     nullable: true,
-    default: 'true',
+    default: '1',
   })
   isActive: string;
 

@@ -2,31 +2,114 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateCarServiceDto } from './dto/create_car_service.dto';
 import { UpdateCarServiceDto } from './dto/update_car_service.dto';
 
-import { DeleteResult, InsertResult, Like, UpdateResult } from 'typeorm';
+import {
+  Between,
+  DeleteResult,
+  InsertResult,
+  Like,
+  UpdateResult,
+} from 'typeorm';
 import { DebtsEntity } from 'src/entities/debt.entity';
 import { UsersEntity } from 'src/entities/users.entity';
 import { CarServiceEntity } from 'src/entities/car_service.entity';
-import { GetCarServiceDto } from './dto/get_car_service.dto';
+import {
+  GetCarServiceDto,
+  GetCarServiseStatistikDto,
+} from './dto/get_car_service.dto';
 import { ServiceCarTypeEnum } from 'src/types';
 
 @Injectable()
 export class CarServiceServise {
   private logger = new Logger(CarServiceServise.name);
 
-  async findAll(query : GetCarServiceDto) {
+  async getStatistic(query: GetCarServiseStatistikDto) {
+    const methodName = this.getStatistic.name;
+    const {
+      profit_or_expense = 'null',
+      pageNumber = 1,
+      pageSize = 100000000,
+      startDate,
+      endDate,
+    } = query;
+
+    try {
+      // console.log(startDate, endDate);
+
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+      const end = endDate ? new Date(endDate) : new Date();
+      const profitOrExpenseType =
+        profit_or_expense == ServiceCarTypeEnum.PROFIT
+          ? ServiceCarTypeEnum.PROFIT
+          : ServiceCarTypeEnum.EXPENSE;
+
+      const allResults: CarServiceEntity[] = await CarServiceEntity.find({
+        where: {
+          profit_or_expense:
+            profit_or_expense == 'null' ? null : profitOrExpenseType,
+          create_data: Between(start, end),
+        },
+        order: {
+          create_data: 'desc',
+        },
+      }).catch((e) => {
+        throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+      });
+
+      const total = allResults.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const offset = (pageNumber - 1) * pageSize;
+
+      const results = allResults.slice(offset, offset + pageSize);
+
+      let totalProfitSum = 0;
+      let totalExpenseSum = 0;
+      for (let e of allResults) {
+        if (e.profit_or_expense == ServiceCarTypeEnum.PROFIT) {
+          totalProfitSum += +e.price;
+        }
+        if (e.profit_or_expense == ServiceCarTypeEnum.EXPENSE) {
+          totalProfitSum += +e.price;
+        }
+      }
+
+      return {
+        results,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages,
+          pageSize,
+          totalItems: total,
+        },
+        totals: {
+          totalProfitSum,
+          totalExpenseSum,
+        },
+      };
+    } catch (error) {
+      this.logger.debug(`Method: ${methodName} - Error: `, error);
+      throw new HttpException(
+        error.toString(),
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  async findAll(query: GetCarServiceDto) {
     const methodName = this.findAll;
 
     try {
-
-      let { profit_or_expense ,pageNumber, pageSize} = query
-    const offset = (pageNumber - 1) * pageSize;
-    if(profit_or_expense !='null') {
-      profit_or_expense = profit_or_expense == ServiceCarTypeEnum.PROFIT ? ServiceCarTypeEnum.PROFIT : ServiceCarTypeEnum.EXPENSE
-    }
+      let { profit_or_expense, pageNumber, pageSize } = query;
+      const offset = (pageNumber - 1) * pageSize;
+      if (profit_or_expense != 'null') {
+        profit_or_expense =
+          profit_or_expense == ServiceCarTypeEnum.PROFIT
+            ? ServiceCarTypeEnum.PROFIT
+            : ServiceCarTypeEnum.EXPENSE;
+      }
 
       const [results, total] = await CarServiceEntity.findAndCount({
         where: {
-          profit_or_expense : profit_or_expense == 'null' ? null : profit_or_expense,
+          profit_or_expense:
+            profit_or_expense == 'null' ? null : profit_or_expense,
         },
         relations: {
           user_id: true,
@@ -68,11 +151,10 @@ export class CarServiceServise {
         relations: {
           user_id: true,
           order_id: true,
-        },  }).catch(
-        (e) => {
-          throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
         },
-      );
+      }).catch((e) => {
+        throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+      });
       if (!findCarService) {
         this.logger.debug(
           `Method: ${methodName} - Car Service Not Found: `,
@@ -111,7 +193,10 @@ export class CarServiceServise {
           .insert()
           .into(CarServiceEntity)
           .values({
-            profit_or_expense: body.profit_or_expense == ServiceCarTypeEnum.PROFIT ? ServiceCarTypeEnum.PROFIT : ServiceCarTypeEnum.EXPENSE,
+            profit_or_expense:
+              body.profit_or_expense == ServiceCarTypeEnum.PROFIT
+                ? ServiceCarTypeEnum.PROFIT
+                : ServiceCarTypeEnum.EXPENSE,
             price: body.price,
             comment: body.comment,
             order_id: null,
@@ -181,7 +266,9 @@ export class CarServiceServise {
         id,
         {
           profit_or_expense:
-            body.profit_or_expense == ServiceCarTypeEnum.PROFIT ? ServiceCarTypeEnum.PROFIT : ServiceCarTypeEnum.EXPENSE || findCarService.profit_or_expense,
+            body.profit_or_expense == ServiceCarTypeEnum.PROFIT
+              ? ServiceCarTypeEnum.PROFIT
+              : ServiceCarTypeEnum.EXPENSE || findCarService.profit_or_expense,
           price: body.price || findCarService.price,
           comment: body.comment || findCarService.comment,
           order_id: null,

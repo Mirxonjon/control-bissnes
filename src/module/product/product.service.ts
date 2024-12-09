@@ -6,29 +6,42 @@ import { DeleteResult, ILike, InsertResult, Like, UpdateResult } from 'typeorm';
 import { AuthServise } from '../auth/auth.service';
 import { ProductCategoriesEntity } from 'src/entities/product_Categories.entity';
 import { ProductsEntity } from 'src/entities/products.entity';
-import { StatusEnum } from 'src/types';
+import { OrderProductTypeEnum, StatusEnum } from 'src/types';
 import { GetProductDto } from './dto/get_product.dto';
 
 @Injectable()
 export class ProductServise {
   private logger = new Logger(ProductServise.name);
 
-  async findAll(query : GetProductDto) {
+  async findAll(query: GetProductDto) {
     const methodName = this.findAll.name;
 
     try {
-
-      const {searchTitle , searchable_title_id , category_id , pageNumber,pageSize}  = query
-    const offset = (pageNumber - 1) * pageSize;
-    console.log(searchTitle , searchable_title_id , category_id , pageNumber,pageSize);
-    
+      const {
+        searchTitle,
+        searchable_title_id,
+        category_id,
+        pageNumber,
+        pageSize,
+      } = query;
+      const offset = (pageNumber - 1) * pageSize;
+      console.log(
+        searchTitle,
+        searchable_title_id,
+        category_id,
+        pageNumber,
+        pageSize,
+      );
 
       const [results, total] = await ProductsEntity.findAndCount({
-        where : {
-          title : searchTitle == 'null' ? null :  ILike(`%${searchTitle}%`),
-          searchable_title_id : searchable_title_id == 'null' ? null : ILike(`%${searchable_title_id}%`),
-          category_id : {
-            id : category_id == 'null' ? null: category_id,
+        where: {
+          title: searchTitle == 'null' ? null : ILike(`%${searchTitle}%`),
+          searchable_title_id:
+            searchable_title_id == 'null'
+              ? null
+              : ILike(`%${searchable_title_id}%`),
+          category_id: {
+            id: category_id == 'null' ? null : category_id,
           },
         },
         relations: {
@@ -40,13 +53,11 @@ export class ProductServise {
         skip: offset,
         take: pageSize,
       }).catch((e) => {
-        console.log(e);
-        
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
       const totalPages = Math.ceil(total / pageSize);
 
-      return  {
+      return {
         results,
         pagination: {
           currentPage: pageNumber,
@@ -54,7 +65,7 @@ export class ProductServise {
           pageSize,
           totalItems: total,
         },
-      };;
+      };
     } catch (error) {
       this.logger.debug(`Method: ${methodName} - Error: `, error);
       throw new HttpException(
@@ -68,23 +79,22 @@ export class ProductServise {
     const methodName = this.findOne;
     try {
       const findProduct = await ProductsEntity.findOne({
-        where : [{
-          id: id,
-          productItems: {
-            order_id: {
-              IsActive : '1'
-            }
-          }
-        },{
-        id: id
-        }
-      
-      ],
+        where: [
+          {
+            id: id,
+            productItems: {
+              IsActive: OrderProductTypeEnum.ACTIVE,
+            },
+          },
+          {
+            id: id,
+          },
+        ],
         relations: {
           category_id: true,
-          productItems : {
-            order_id:true
-          }
+          productItems: {
+            order_id: true,
+          },
         },
       }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
@@ -192,13 +202,16 @@ export class ProductServise {
         where: { id },
       });
 
-      if(findProduct.searchable_title_id != body.searchable_title_id && body.searchable_title_id){
+      if (
+        findProduct.searchable_title_id != body.searchable_title_id &&
+        body.searchable_title_id
+      ) {
         const findProduct = await ProductsEntity.findOne({
           where: {
             searchable_title_id: body.searchable_title_id,
           },
         });
-  
+
         if (findProduct) {
           this.logger.debug(
             `Method: ${methodName} - Product find: `,
@@ -210,7 +223,6 @@ export class ProductServise {
           );
         }
       }
-
 
       if (!findProduct) {
         this.logger.debug(

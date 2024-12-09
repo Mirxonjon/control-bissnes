@@ -2,7 +2,14 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create_order.dto';
 import { UpdateOrderDto, UpdateOrderStatusDto } from './dto/update_order.dto';
 
-import { DeleteResult, InsertResult, Like, UpdateResult } from 'typeorm';
+import {
+  Between,
+  DeleteResult,
+  ILike,
+  InsertResult,
+  Like,
+  UpdateResult,
+} from 'typeorm';
 import { DebtsEntity } from 'src/entities/debt.entity';
 import { UsersEntity } from 'src/entities/users.entity';
 import { OrdersEntity } from 'src/entities/orders.entity';
@@ -16,16 +23,114 @@ import {
 import { OrderProductsEntity } from 'src/entities/order_products.entity';
 import { ProductsEntity } from 'src/entities/products.entity';
 import { CarServiceEntity } from 'src/entities/car_service.entity';
+import { GetOrderDto, GetStatistikDto } from './dto/get_order_dto';
 
 @Injectable()
 export class OrderServise {
   private logger = new Logger(OrderServise.name);
 
-  async findAll() {
-    const methodName = this.findAll.name;
+  async getStatistic(query: GetStatistikDto) {
+    const methodName = this.getStatistic.name;
+    const {
+      isActive = 'null',
+      pageNumber = 1,
+      pageSize = 100000000,
+      startDate,
+      endDate,
+    } = query;
 
     try {
-      const allOrders = await OrdersEntity.find({
+      // console.log(startDate, endDate);
+
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+      const end = endDate ? new Date(endDate) : new Date();
+
+      const allResults = await OrdersEntity.find({
+        where: {
+          IsActive:
+            isActive === 'null'
+              ? null
+              : isActive === 'true'
+              ? StatusEnum.TRUE
+              : StatusEnum.FALSE,
+          create_data: Between(start, end),
+        },
+        order: {
+          create_data: 'desc',
+        },
+      }).catch((e) => {
+        throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+      });
+
+      const total = allResults.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const offset = (pageNumber - 1) * pageSize;
+
+      const results = allResults.slice(offset, offset + pageSize);
+
+      let totalPriceSum = 0;
+      let totalPaidSum = 0;
+      for (let e of allResults) {
+        totalPriceSum += +e.total_price;
+        totalPaidSum += +e.paid_total;
+      }
+
+      return {
+        results,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages,
+          pageSize,
+          totalItems: total,
+        },
+        totals: {
+          totalPriceSum,
+          totalPaidSum,
+        },
+      };
+    } catch (error) {
+      this.logger.debug(`Method: ${methodName} - Error: `, error);
+      throw new HttpException(
+        error.toString(),
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAll(query: GetOrderDto) {
+    const methodName = this.findAll.name;
+    const {
+      isActive = 'null',
+      pageNumber = 1,
+      pageSize = 100000000,
+      nomer = 'null',
+      name = 'null',
+      startDate,
+      endDate,
+    } = query;
+
+    try {
+      // console.log(startDate, endDate);
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+      const end = endDate ? new Date(endDate) : new Date();
+      // console.log(start, end, name, nomer);
+
+      const offset = (pageNumber - 1) * pageSize;
+
+      const [results, total] = await OrdersEntity.findAndCount({
+        where: {
+          IsActive:
+            isActive == 'null'
+              ? null
+              : isActive == 'true'
+              ? StatusEnum.TRUE
+              : StatusEnum.FALSE,
+          create_data: Between(start, end),
+          user_id: {
+            phone: nomer == 'null' ? null : Like(`%${nomer}%`),
+            name: name == 'null' ? null : ILike(`%${name}%`),
+          },
+        },
         relations: {
           user_id: true,
           carServices: true,
@@ -36,25 +141,22 @@ export class OrderServise {
         order: {
           create_data: 'desc',
         },
+        skip: offset,
+        take: pageSize,
       }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
-      // const allCarservice = await CarServiceEntity.find({
-      //   where: {
-      //     order_id: {
-      //       // id : 
-      //     }
-      //   },
-      //   relations: {
-      //     user_id: true,
-      //     order_id: true,
-      //   },
-      //   order: {
-      //     create_data: 'desc',
-      //   },
-      // })
+      const totalPages = Math.ceil(total / pageSize);
 
-      return allOrders;
+      return {
+        results,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages,
+          pageSize,
+          totalItems: total,
+        },
+      };
     } catch (error) {
       this.logger.debug(`Method: ${methodName} - Error: `, error);
       throw new HttpException(
@@ -69,7 +171,7 @@ export class OrderServise {
     try {
       const findOrder = await OrdersEntity.findOne({
         where: {
-        id
+          id,
         },
         relations: {
           user_id: true,
@@ -78,7 +180,6 @@ export class OrderServise {
             product_id: true,
           },
         },
-      
       }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
@@ -315,7 +416,7 @@ export class OrderServise {
   }
   async update(id: string, body: UpdateOrderDto) {
     const methodName = this.update;
-// console.log(body);
+    // console.log(body);
 
     try {
       const findOrder = await OrdersEntity.findOne({
@@ -971,7 +1072,6 @@ export class OrderServise {
   async updateStatus(id: string, body: UpdateOrderStatusDto) {
     const methodName = this.update;
     console.log(body);
-    
 
     try {
       const findOrder = await OrdersEntity.findOne({

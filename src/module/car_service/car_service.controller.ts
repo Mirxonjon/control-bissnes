@@ -38,7 +38,7 @@ import {
 } from './dto/update_car_service.dto';
 import { jwtGuard } from '../auth/guards/jwt.guard';
 import { type } from 'os';
-import { GetCarServiceDto } from './dto/get_car_service.dto';
+import { GetCarServiceDto, GetCarServiseStatistikDto } from './dto/get_car_service.dto';
 @Controller('car-service')
 @ApiTags('Car Service')
 @ApiBearerAuth('JWT-auth')
@@ -48,11 +48,19 @@ export class CarServiceController {
     this.#_service = service;
   }
 
+  @Get('/statistic')
+  @ApiBadRequestResponse()
+  @ApiNotFoundResponse()
+  @ApiOkResponse()
+  async getStatistic(@Query() query: GetCarServiseStatistikDto) {
+    return await this.#_service.getStatistic(query);
+  }
+
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiOkResponse()
-  async findall(@Query() query :GetCarServiceDto) {
+  async findall(@Query() query: GetCarServiceDto) {
     return await this.#_service.findAll(query);
   }
 

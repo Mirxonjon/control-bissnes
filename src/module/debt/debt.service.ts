@@ -2,21 +2,97 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateDebtDto } from './dto/create_debt.dto';
 import { UpdateDebtDto } from './dto/update_debt.dto';
 
-import { DeleteResult, InsertResult, Like, UpdateResult } from 'typeorm';
+import {
+  Between,
+  DeleteResult,
+  InsertResult,
+  Like,
+  UpdateResult,
+} from 'typeorm';
 import { DebtsEntity } from 'src/entities/debt.entity';
 import { UsersEntity } from 'src/entities/users.entity';
 import { GetUDebtDto } from './dto/get_debt.dto';
+import { GetStatistikDto } from '../order/dto/get_order_dto';
+import { StatusEnum } from 'src/types';
 
 @Injectable()
 export class DebtServise {
   private logger = new Logger(DebtServise.name);
 
-  async findAll(query : GetUDebtDto) {
-    const methodName = this.findAll;
-    
+  async getStatistic(query: GetStatistikDto) {
+    const methodName = this.getStatistic.name;
+    const {
+      isActive = 'null',
+      pageNumber = 1,
+      pageSize = 100000000,
+      startDate,
+      endDate,
+    } = query;
+
     try {
-      const {pageNumber, pageSize} = query
-    const offset = (pageNumber - 1) * pageSize;
+      // console.log(startDate, endDate);
+
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+      const end = endDate ? new Date(endDate) : new Date();
+      const IsActiveType =
+        isActive == 'null'
+          ? null
+          : isActive == 'true'
+          ? StatusEnum.TRUE
+          : StatusEnum.FALSE;
+      const allResults = await DebtsEntity.find({
+        where: {
+          isActive: IsActiveType,
+          create_data: Between(start, end),
+        },
+        order: {
+          create_data: 'desc',
+        },
+      });
+      const total = allResults.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const offset = (pageNumber - 1) * pageSize;
+
+      const results = allResults.slice(offset, offset + pageSize);
+
+      let totalActiveDebtSum = 0;
+      let totalNotActiveDebtSum = 0;
+      for (let e of allResults) {
+        if (e.isActive == StatusEnum.TRUE) {
+          totalActiveDebtSum += +e.remaining_debt;
+        }
+        if (e.isActive == StatusEnum.FALSE) {
+          totalNotActiveDebtSum += +e.remaining_debt;
+        }
+      }
+      return {
+        results,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages,
+          pageSize,
+          totalItems: total,
+        },
+        totals: {
+          totalActiveDebtSum,
+          totalNotActiveDebtSum,
+        },
+      };
+    } catch (error) {
+      this.logger.debug(`Method: ${methodName} - Error: `, error);
+      throw new HttpException(
+        error.toString(),
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAll(query: GetUDebtDto) {
+    const methodName = this.findAll;
+
+    try {
+      const { pageNumber, pageSize } = query;
+      const offset = (pageNumber - 1) * pageSize;
 
       const [results, total] = await DebtsEntity.findAndCount({
         relations: {
@@ -31,7 +107,6 @@ export class DebtServise {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
       const totalPages = Math.ceil(total / pageSize);
-
 
       return {
         results,
@@ -55,11 +130,11 @@ export class DebtServise {
     const methodName = this.findOne.name;
     try {
       const findDebt = await DebtsEntity.findOne({
-        where :{ id },
-        relations : {
+        where: { id },
+        relations: {
           user_id: true,
           order_id: true,
-        }
+        },
       }).catch((e) => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
       });
@@ -98,7 +173,8 @@ export class DebtServise {
         .into(DebtsEntity)
         .values({
           remaining_debt: body.remaining_debt,
-          isActive: body.isActive,
+          isActive:
+            body.isActive == 'true' ? StatusEnum.TRUE : StatusEnum.FALSE,
           comment: body.comment,
           dayToBeGiven: body.dayToBeGiven,
           dayGiven: body.dayGiven,
@@ -164,7 +240,10 @@ export class DebtServise {
 
       const updatedDebt: UpdateResult = await DebtsEntity.update(id, {
         remaining_debt: body.remaining_debt || findDebt.remaining_debt,
-        isActive: body.isActive || findDebt.isActive,
+        isActive:
+          body.isActive == 'true'
+            ? StatusEnum.TRUE
+            : StatusEnum.FALSE || findDebt.isActive,
         comment: body.comment || findDebt.comment,
         dayToBeGiven: body.dayToBeGiven || findDebt.dayToBeGiven,
         dayGiven: body.dayGiven || findDebt.dayGiven,

@@ -31,6 +31,7 @@ import { OrderServise } from './order.service';
 import { CreateOrderDto } from './dto/create_order.dto';
 import { UpdateOrderDto, UpdateOrderStatusDto } from './dto/update_order.dto';
 import { jwtGuard } from '../auth/guards/jwt.guard';
+import { GetOrderDto, GetStatistikDto } from './dto/get_order_dto';
 @Controller('order')
 @ApiTags('Order')
 @ApiBearerAuth('JWT-auth')
@@ -40,12 +41,20 @@ export class OrdersController {
     this.#_service = service;
   }
 
+  @Get('/statistic')
+  @ApiBadRequestResponse()
+  @ApiNotFoundResponse()
+  @ApiOkResponse()
+  async getStatistic(@Query() query: GetStatistikDto) {
+    return await this.#_service.getStatistic(query);
+  }
+
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiOkResponse()
-  async findall() {
-    return await this.#_service.findAll();
+  async findall(@Query() query: GetOrderDto) {
+    return await this.#_service.findAll(query);
   }
 
   @Get('/one/:id')

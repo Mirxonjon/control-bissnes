@@ -31,7 +31,7 @@ import { DebtServise } from './debt.service';
 import { CreateDebtSwaggerBodyDto, CreateDebtDto } from './dto/create_debt.dto';
 import { UpdateDebtSwaggerBodyDto, UpdateDebtDto } from './dto/update_debt.dto';
 import { jwtGuard } from '../auth/guards/jwt.guard';
-import { GetUDebtDto } from './dto/get_debt.dto';
+import { GetStatistikDebtDto, GetUDebtDto } from './dto/get_debt.dto';
 @Controller('debt')
 @ApiTags('Debt')
 @ApiBearerAuth('JWT-auth')
@@ -41,11 +41,19 @@ export class DebtsController {
     this.#_service = service;
   }
 
+  @Get('/statistic')
+  @ApiBadRequestResponse()
+  @ApiNotFoundResponse()
+  @ApiOkResponse()
+  async getStatistic(@Query() query: GetStatistikDebtDto) {
+    return await this.#_service.getStatistic(query);
+  }
+
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiOkResponse()
-  async findall(@Query() query: GetUDebtDto ) {
+  async findall(@Query() query: GetUDebtDto) {
     return await this.#_service.findAll(query);
   }
 

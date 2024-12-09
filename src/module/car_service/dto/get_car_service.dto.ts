@@ -22,5 +22,37 @@ export class GetCarServiceDto {
     @IsString()
     profit_or_expense?: string = 'null' ;
 
+}
 
+
+export class GetCarServiseStatistikDto {
+  @ApiProperty({ required: false, example: 'true' })
+  @IsOptional()
+  @Type(() => String)
+  @IsString()
+  profit_or_expense?: string = 'null';
+
+  @ApiProperty({ required: false, example: '2023-01-01' })
+  @IsOptional()
+  //   @Type(() => Date)
+  @IsString()
+  startDate?: string = 'null';
+
+  @ApiProperty({ required: false, example: '2024-01-01' })
+  @IsOptional()
+  //   @Type(() => Date)
+  @IsString()
+  endDate?: string = 'null';
+
+  @ApiProperty({ required: false, example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  pageNumber?: number;
+
+  @ApiProperty({ required: false, example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  pageSize?: number;
 }
