@@ -1,6 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateOrderProductDto } from './create_order_product.dto';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateOrderProductDto extends PartialType(CreateOrderProductDto) {
   @ApiProperty({
@@ -9,7 +9,7 @@ export class UpdateOrderProductDto extends PartialType(CreateOrderProductDto) {
     example: '88dd8fbb-1234-4a4b-9f2f-1cc4b1ff12b8',
   })
   @IsUUID()
-  @IsNotEmpty()
+  @IsOptional()
   order_product_id: string;
 
   @ApiProperty({
