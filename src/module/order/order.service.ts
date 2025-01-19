@@ -1121,7 +1121,8 @@ export class OrderServise {
         .catch((e) => {
           throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
         });
-
+        console.log(findOrder?.orderProducts, 'create debt');
+        
       if (!createDebt.raw[0].id) {
         this.logger.debug(
           `Method: ${methodName} - Erorr Insert Debt: `,
