@@ -56,6 +56,7 @@ export class AuthServise {
 
         if (formatImage !== 'Not image') {
           image_link = googleCloud(image);
+          image_link = `https://storage.googleapis.com/telecom2003/${image_link}`;
         }
         const InserUserResult: InsertResult =
           await UsersEntity.createQueryBuilder()
