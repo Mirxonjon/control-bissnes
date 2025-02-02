@@ -70,7 +70,8 @@ export class AuthServise {
               img: image_link,
               comment: createUser.comment,
               password: createUser.password,
-              role: createUser.role == 'user' ? RolesEnum.USER : RolesEnum.ADMIN ,
+              role:
+                createUser.role == 'user' ? RolesEnum.USER : RolesEnum.ADMIN,
             })
             .returning(['id', 'role', 'password'])
             .execute()
@@ -145,6 +146,7 @@ export class AuthServise {
 
         if (formatImage !== 'Not image') {
           image_link = googleCloud(image);
+          image_link = `https://storage.googleapis.com/telecom2003/${image_link}`;
         }
         const updatedUserResult: UpdateResult = await UsersEntity.update(id, {
           first_name: body.first_name || findUser.first_name,
@@ -154,7 +156,10 @@ export class AuthServise {
           img: image_link,
           comment: body.comment || findUser.comment,
           password: body.password || findUser.password,
-          role: body.role == 'user' ? RolesEnum.USER : RolesEnum.ADMIN || findUser.role,
+          role:
+            body.role == 'user'
+              ? RolesEnum.USER
+              : RolesEnum.ADMIN || findUser.role,
         }).catch((e) => {
           throw new HttpException('Bad Request ', HttpStatus.BAD_REQUEST);
         });
@@ -193,7 +198,7 @@ export class AuthServise {
     const methodName = this.signIn;
     try {
       console.log(signInDto);
-      
+
       const finduser = await UsersEntity.findOne({
         where: {
           phone: signInDto.phone,
@@ -252,16 +257,16 @@ export class AuthServise {
     }
   }
 
-  async getAllUsers(query :GetUserDto) {
-    const { phone,role  , pageNumber ,pageSize} = query
+  async getAllUsers(query: GetUserDto) {
+    const { phone, role, pageNumber, pageSize } = query;
     const methodName = this.getAllUsers;
     try {
       const offset = (pageNumber - 1) * pageSize;
 
       const [results, total] = await UsersEntity.findAndCount({
         where: {
-          phone : phone == 'null' ? null : ILike(`%${phone}%`) ,
-          role: role == 'null' ? null : role ,
+          phone: phone == 'null' ? null : ILike(`%${phone}%`),
+          role: role == 'null' ? null : role,
         },
         order: {
           create_data: 'desc',
@@ -282,8 +287,6 @@ export class AuthServise {
           totalItems: total,
         },
       };
-
-
     } catch (error) {
       this.logger.debug(`Method: ${methodName} - Error: `, error);
       throw new HttpException(
@@ -296,31 +299,25 @@ export class AuthServise {
   async getOne(id: string) {
     const methodName = this.getAllUsers;
     try {
-      const findUser= await UsersEntity.findOne({
-      where :{
-        id 
-      },
-      relations :{
-        orders : true,
-        debts: true,
-        carServices :true,
-
-      }
+      const findUser = await UsersEntity.findOne({
+        where: {
+          id,
+        },
+        relations: {
+          orders: true,
+          debts: true,
+          carServices: true,
+        },
       }).catch((e) => {
         throw new HttpException('Bad Request ', HttpStatus.BAD_REQUEST);
       });
 
-      if(!findUser) {
-        this.logger.debug(`Method: ${methodName} - Not Found User`, findUser)
-        throw new HttpException(
-          `Not Found  User`,
-          HttpStatus.NOT_FOUND,
-        );
+      if (!findUser) {
+        this.logger.debug(`Method: ${methodName} - Not Found User`, findUser);
+        throw new HttpException(`Not Found  User`, HttpStatus.NOT_FOUND);
       }
 
       return findUser;
-
-
     } catch (error) {
       this.logger.debug(`Method: ${methodName} - Error: `, error);
       throw new HttpException(
@@ -329,8 +326,6 @@ export class AuthServise {
       );
     }
   }
-
-
 
   async deleteControlUser(id: string) {
     const methodName = this.deleteControlUser;
