@@ -32,6 +32,8 @@ import { CreateDebtSwaggerBodyDto, CreateDebtDto } from './dto/create_debt.dto';
 import { UpdateDebtSwaggerBodyDto, UpdateDebtDto } from './dto/update_debt.dto';
 import { jwtGuard } from '../auth/guards/jwt.guard';
 import { GetStatistikDebtDto, GetUDebtDto } from './dto/get_debt.dto';
+import { RequiredRoles } from '../auth/guards/roles.decorator';
+import { RolesEnum } from 'src/types';
 @Controller('debt')
 @ApiTags('Debt')
 @ApiBearerAuth('JWT-auth')
@@ -41,6 +43,7 @@ export class DebtsController {
     this.#_service = service;
   }
 
+  @RequiredRoles(RolesEnum.ADMIN)
   @Get('/statistic')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -49,6 +52,7 @@ export class DebtsController {
     return await this.#_service.getStatistic(query);
   }
 
+  @RequiredRoles(RolesEnum.USER)
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -65,7 +69,7 @@ export class DebtsController {
     return await this.#_service.findOne(id);
   }
 
-  // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateDebtSwaggerBodyDto })
@@ -77,7 +81,7 @@ export class DebtsController {
     return await this.#_service.create(createProductDto);
   }
 
-  // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Patch('/update/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: UpdateDebtSwaggerBodyDto })
@@ -91,7 +95,7 @@ export class DebtsController {
     await this.#_service.update(id, updateProductDto);
   }
 
-  // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Delete('/delete/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBadRequestResponse()

@@ -39,6 +39,8 @@ import {
 import { jwtGuard } from '../auth/guards/jwt.guard';
 import { type } from 'os';
 import { GetCarServiceDto, GetCarServiseStatistikDto } from './dto/get_car_service.dto';
+import { RequiredRoles } from '../auth/guards/roles.decorator';
+import { RolesEnum } from 'src/types';
 @Controller('car-service')
 @ApiTags('Car Service')
 @ApiBearerAuth('JWT-auth')
@@ -47,7 +49,7 @@ export class CarServiceController {
   constructor(service: CarServiceServise) {
     this.#_service = service;
   }
-
+  @RequiredRoles(RolesEnum.ADMIN)
   @Get('/statistic')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -55,7 +57,7 @@ export class CarServiceController {
   async getStatistic(@Query() query: GetCarServiseStatistikDto) {
     return await this.#_service.getStatistic(query);
   }
-
+  @RequiredRoles(RolesEnum.USER)
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -73,6 +75,7 @@ export class CarServiceController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateCarServiceSwaggerBodyDto })
@@ -85,6 +88,7 @@ export class CarServiceController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Patch('/update/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: UpdateCarServiceSwaggerBodyDto })
@@ -99,6 +103,7 @@ export class CarServiceController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Delete('/delete/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBadRequestResponse()

@@ -48,16 +48,16 @@ export class ProductCategoriesController {
     this.#_service = service;
   }
 
+  @RequiredRoles(RolesEnum.USER)
   @Get('/all-with-sort')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiOkResponse()
-  async findall(
-    @Query() query: GetCategoriesProductDto
-  ) {
+  async findall(@Query() query: GetCategoriesProductDto) {
     return await this.#_service.findAll(query);
   }
 
+  @RequiredRoles(RolesEnum.USER)
   @Get('/one/:id')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -67,6 +67,7 @@ export class ProductCategoriesController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateCategoryProductSwaggerBodyDto })
@@ -80,6 +81,7 @@ export class ProductCategoriesController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Patch('/update/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: UpdateCategoryProductSwaggerBodyDto })
@@ -93,6 +95,7 @@ export class ProductCategoriesController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Delete('/delete/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBadRequestResponse()

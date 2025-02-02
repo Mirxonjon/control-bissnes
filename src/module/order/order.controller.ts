@@ -32,6 +32,8 @@ import { CreateOrderDto } from './dto/create_order.dto';
 import { UpdateOrderDto, UpdateOrderStatusDto } from './dto/update_order.dto';
 import { jwtGuard } from '../auth/guards/jwt.guard';
 import { GetOrderDto, GetStatistikDto } from './dto/get_order_dto';
+import { RequiredRoles } from '../auth/guards/roles.decorator';
+import { RolesEnum } from 'src/types';
 @Controller('order')
 @ApiTags('Order')
 @ApiBearerAuth('JWT-auth')
@@ -40,7 +42,7 @@ export class OrdersController {
   constructor(service: OrderServise) {
     this.#_service = service;
   }
-
+  @RequiredRoles(RolesEnum.ADMIN)
   @Get('/statistic')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -49,6 +51,7 @@ export class OrdersController {
     return await this.#_service.getStatistic(query);
   }
 
+  @RequiredRoles(RolesEnum.USER)
   @Get('/all')
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
@@ -66,6 +69,7 @@ export class OrdersController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateOrderDto })
@@ -78,6 +82,7 @@ export class OrdersController {
   }
 
   // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Patch('/update/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: UpdateOrderDto })
@@ -90,7 +95,7 @@ export class OrdersController {
   ) {
     await this.#_service.update(id, updateProductDto);
   }
-
+  @RequiredRoles(RolesEnum.USER)
   @Patch('/update-status/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: UpdateOrderStatusDto })
@@ -104,7 +109,8 @@ export class OrdersController {
     await this.#_service.updateStatus(id, updateOrderStatusDto);
   }
 
-  @UseGuards(jwtGuard)
+  // @UseGuards(jwtGuard)
+  @RequiredRoles(RolesEnum.USER)
   @Delete('/delete/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBadRequestResponse()
