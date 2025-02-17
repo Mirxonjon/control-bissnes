@@ -53,6 +53,15 @@ export class CreateOrderDto {
   paid_total: string;
 
   @ApiProperty({
+    type: 'string',
+    description: "Comment",
+    example: 'Oz vaqtida tolanishi kerak',
+  })
+  @IsString()
+  @IsNotEmpty()
+  comment: string;
+
+  @ApiProperty({
     type: () => [CreateOrderProductDto],
     description: 'Sotib olingan mahsulotlar',
     examples: [CreateOrderProductDto, CreateOrderProductDto],

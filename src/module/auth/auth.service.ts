@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from './dto/create_user.dto';
 import { UsersEntity } from 'src/entities/users.entity';
 import { SingInUserDto } from './dto/sign_in-user.dto';
-import { DeleteResult, ILike, InsertResult, UpdateResult } from 'typeorm';
+import { DeleteResult, ILike, InsertResult, Like, UpdateResult } from 'typeorm';
 import { allowedImageFormats } from 'src/utils/videoAndImageFormat';
 import { extname } from 'path';
 import { googleCloud } from 'src/utils/google_cloud';
@@ -258,16 +258,35 @@ export class AuthServise {
   }
 
   async getAllUsers(query: GetUserDto) {
-    const { phone, role, pageNumber, pageSize } = query;
-    const methodName = this.getAllUsers;
+    const { search, role, pageNumber, pageSize } = query;
+    const methodName = this.getAllUsers.name;
     try {
       const offset = (pageNumber - 1) * pageSize;
+console.log(query);
 
       const [results, total] = await UsersEntity.findAndCount({
-        where: {
-          phone: phone == 'null' ? null : ILike(`%${phone}%`),
-          role: role == 'null' ? null : role,
-        },
+        where: [
+          {
+            phone: search == 'null' ? null : ILike(`%${search}%`),
+            role: role == 'null' ? null : role,
+          },
+          {
+            first_name: search == 'null' ? null : ILike(`%${search}%`),
+            role: role == 'null' ? null : role,
+          },
+          {
+            last_name: search == 'null' ? null : ILike(`%${search}%`),
+            role: role == 'null' ? null : role,
+          },
+          {
+            comment: search == 'null' ? null : ILike(`%${search}%`),
+            role: role == 'null' ? null : role,
+          },
+          {
+            name: search == 'null' ? null : ILike(`%${search}%`),
+            role: role == 'null' ? null : role,
+          },
+        ],
         order: {
           create_data: 'desc',
         },

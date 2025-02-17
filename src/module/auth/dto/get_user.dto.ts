@@ -19,7 +19,7 @@ export class GetUserDto {
     @IsOptional()
     @Type(() => String)
     @IsString()
-    phone?: string = 'null' ;
+    search?: string = 'null' ;
 
     @ApiProperty({ required: false, example: 'user', })
     @IsOptional()

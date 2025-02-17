@@ -46,11 +46,13 @@ export class OrderProductsEntity extends BaseEntity {
 
   @Column({
     type: 'date',
+    nullable: true,
   })
   given_date: Date;
 
   @Column({
     type: 'date',
+    nullable: true,
   })
   end_date: Date;
 

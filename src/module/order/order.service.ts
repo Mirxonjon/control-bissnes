@@ -126,10 +126,25 @@ export class OrderServise {
               ? StatusEnum.TRUE
               : StatusEnum.FALSE,
           create_data: Between(start, end),
-          user_id: {
-            phone: nomer == 'null' ? null : Like(`%${nomer}%`),
-            name: name == 'null' ? null : ILike(`%${name}%`),
-          },
+          user_id: [
+            {
+              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
+              name: name == 'null' ? null : ILike(`%${name}%`),
+            },
+            {
+              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
+              last_name: name == 'null' ? null : ILike(`%${name}%`),
+            },
+            {
+              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
+              first_name: name == 'null' ? null : ILike(`%${name}%`),
+            },
+
+            {
+              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
+              comment: name == 'null' ? null : ILike(`%${name}%`),
+            },
+          ],
         },
         relations: {
           user_id: true,
@@ -203,7 +218,6 @@ export class OrderServise {
   async create(body: CreateOrderDto) {
     const methodName = this.create.name;
     try {
-      console.log(body);
 
       const findUser = await UsersEntity.findOne({
         where: {
@@ -226,6 +240,7 @@ export class OrderServise {
           daily_price: body.daily_price,
           paid_total: body.paid_total,
           IsActive: StatusEnum.TRUE,
+          comment: body.comment,
           user_id: findUser,
         })
         .execute()
@@ -453,6 +468,7 @@ export class OrderServise {
         total_price: body.total_price || findOrder.total_price,
         daily_price: body.daily_price || findOrder.daily_price,
         paid_total: body.paid_total || findOrder.paid_total,
+        comment: body.comment || findOrder.comment,
         // user_id: findUser,
       });
       if (!updatedOrder.affected) {

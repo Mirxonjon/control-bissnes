@@ -43,6 +43,12 @@ export class OrdersEntity extends BaseEntity {
   })
   IsActive: string;
 
+  @Column({
+    type: 'character varying',
+    nullable: true,
+  })
+  comment: string;
+
   @CreateDateColumn()
   data_sequence: Date;
 

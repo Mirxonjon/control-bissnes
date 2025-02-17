@@ -93,7 +93,9 @@ export class ProductServise {
         relations: {
           category_id: true,
           productItems: {
-            order_id: true,
+            order_id: {
+              user_id: true,
+            },
           },
         },
       }).catch((e) => {
