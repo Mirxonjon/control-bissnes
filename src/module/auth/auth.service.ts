@@ -21,7 +21,7 @@ export class AuthServise {
   constructor(private readonly jwtServise: JwtService) {}
   private logger = new Logger(AuthServise.name);
   async createUser(createUser: CreateUserDto, image: Express.Multer.File) {
-    const methodName = this.createUser;
+    const methodName = this.createUser.name;
     try {
       const findUser = await UsersEntity.findOne({
         where: {
@@ -89,7 +89,9 @@ export class AuthServise {
             HttpStatus.BAD_REQUEST,
           );
         }
-        return;
+        return {
+          user: InserUserResult?.raw[0],
+        };
       } else {
         this.logger.debug(
           `Method: ${methodName} - Error formatImage: `,
