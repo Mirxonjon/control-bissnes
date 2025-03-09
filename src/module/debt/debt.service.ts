@@ -95,6 +95,12 @@ export class DebtServise {
       const offset = (pageNumber - 1) * pageSize;
 
       const [results, total] = await DebtsEntity.findAndCount({
+        where: {
+          user_id: {
+            name: query.search == 'null' ? null : Like(`%${query.search}%`),
+            phone: query.search == 'null' ? null : Like(`%${query.search}%`),
+          },
+        },
         relations: {
           user_id: true,
         },

@@ -110,6 +110,10 @@ export class CarServiceServise {
         where: {
           profit_or_expense:
             profit_or_expense == 'null' ? null : profit_or_expense,
+          user_id: {
+            name: query.search == 'null' ? null : Like(`%${query.search}%`),
+            phone: query.search == 'null' ? null : Like(`%${query.search}%`),
+          }
         },
         relations: {
           user_id: true,

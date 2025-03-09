@@ -117,50 +117,61 @@ export class OrderServise {
 
       const offset = (pageNumber - 1) * pageSize;
 
-      const [results, total] = await OrdersEntity.findAndCount({
-        where: {
-          IsActive:
-            isActive == 'null'
-              ? null
-              : isActive == 'true'
-              ? StatusEnum.TRUE
-              : StatusEnum.FALSE,
-          create_data: Between(start, end),
-          user_id: [
-            {
-              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
-              name: name == 'null' ? null : ILike(`%${name}%`),
-            },
-            {
-              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
-              last_name: name == 'null' ? null : ILike(`%${name}%`),
-            },
-            {
-              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
-              first_name: name == 'null' ? null : ILike(`%${name}%`),
-            },
+const whereCondition: any = {};
 
-            {
-              phone: nomer == 'null' ? null : Like(`%${nomer}%`),
-              comment: name == 'null' ? null : ILike(`%${name}%`),
-            },
-          ],
-        },
-        relations: {
-          user_id: true,
-          carServices: true,
-          orderProducts: {
-            product_id: true,
-          },
-        },
-        order: {
-          create_data: 'desc',
-        },
-        skip: offset,
-        take: pageSize,
-      }).catch((e) => {
-        throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
-      });
+// IsActive sharti
+if (isActive !== 'null') {
+  whereCondition.IsActive =
+    isActive === 'true' ? StatusEnum.TRUE : StatusEnum.FALSE;
+}
+
+// Sana oralig'i
+if (start && end) {
+  whereCondition.create_data = Between(start, end);
+}
+
+// Foydalanuvchi bo'yicha filter
+if (nomer !== 'null' || name !== 'null') {
+  whereCondition.user_id = [
+    {
+      phone: nomer === 'null' ? null : Like(`%${nomer}%`),
+      name: name === 'null' ? null : ILike(`%${name}%`),
+    },
+    {
+      phone: nomer === 'null' ? null : Like(`%${nomer}%`),
+      last_name: name === 'null' ? null : ILike(`%${name}%`),
+    },
+    {
+      phone: nomer === 'null' ? null : Like(`%${nomer}%`),
+      first_name: name === 'null' ? null : ILike(`%${name}%`),
+    },
+    {
+      phone: nomer === 'null' ? null : Like(`%${nomer}%`),
+      comment: name === 'null' ? null : ILike(`%${name}%`),
+    },
+  ];
+}
+
+const [results, total] = await OrdersEntity.findAndCount({
+  where: whereCondition,
+  relations: {
+    user_id: true,
+    carServices: true,
+    orderProducts: {
+      product_id: true,
+    },
+  },
+  order: {
+    create_data: 'desc',
+  },
+  skip: offset,
+  take: pageSize,
+}).catch((e) => {
+  console.log(e);
+  throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
+});
+
+
       const totalPages = Math.ceil(total / pageSize);
 
       return {
@@ -218,7 +229,6 @@ export class OrderServise {
   async create(body: CreateOrderDto) {
     const methodName = this.create.name;
     try {
-
       const findUser = await UsersEntity.findOne({
         where: {
           id: body.user_id,
@@ -1137,8 +1147,8 @@ export class OrderServise {
         .catch((e) => {
           throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
         });
-        console.log(findOrder?.orderProducts, 'create debt');
-        
+      console.log(findOrder?.orderProducts, 'create debt');
+
       if (!createDebt.raw[0].id) {
         this.logger.debug(
           `Method: ${methodName} - Erorr Insert Debt: `,
